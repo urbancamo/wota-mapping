@@ -52,7 +52,7 @@ async function getUnactivatedSummits() {
 async function getSummitsActivatedByCallsign(callsign) {
   try {
     const query = `
-      SELECT
+      SELECT DISTINCT
         s.wotaid,
         s.sotaid,
         s.book,
@@ -64,7 +64,8 @@ async function getSummitsActivatedByCallsign(callsign) {
         s.humpid,
         s.gridid
       FROM summits s
-      WHERE s.last_act_by = ?
+      INNER JOIN activator_log al ON s.wotaid = al.wotaid
+      WHERE al.activatedby = ?
       ORDER BY s.wotaid
     `;
     const [rows] = await pool.query(query, [callsign.toUpperCase()]);
@@ -90,9 +91,9 @@ async function getSummitsActivatedByCallsignThisYear(callsign, year) {
         s.humpid,
         s.gridid
       FROM summits s
-      INNER JOIN spots sp ON s.wotaid = sp.wotaid
-      WHERE sp.call = ?
-        AND YEAR(sp.datetime) = ?
+      INNER JOIN activator_log al ON s.wotaid = al.wotaid
+      WHERE al.activatedby = ?
+        AND al.year = ?
       ORDER BY s.wotaid
     `;
     const [rows] = await pool.query(query, [callsign.toUpperCase(), year]);
@@ -106,7 +107,7 @@ async function getSummitsActivatedByCallsignThisYear(callsign, year) {
 async function getSummitsNotActivatedByCallsign(callsign) {
   try {
     const query = `
-      SELECT DISTINCT
+      SELECT
         s.wotaid,
         s.sotaid,
         s.book,
@@ -119,9 +120,9 @@ async function getSummitsNotActivatedByCallsign(callsign) {
         s.gridid
       FROM summits s
       WHERE NOT EXISTS (
-        SELECT 1 FROM spots sp
-        WHERE sp.wotaid = s.wotaid
-        AND sp.call = ?
+        SELECT 1 FROM activator_log al
+        WHERE al.wotaid = s.wotaid
+        AND al.activatedby = ?
       )
       ORDER BY s.wotaid
     `;
@@ -136,7 +137,7 @@ async function getSummitsNotActivatedByCallsign(callsign) {
 async function getSummitsNotActivatedByCallsignThisYear(callsign, year) {
   try {
     const query = `
-      SELECT DISTINCT
+      SELECT
         s.wotaid,
         s.sotaid,
         s.book,
@@ -149,10 +150,10 @@ async function getSummitsNotActivatedByCallsignThisYear(callsign, year) {
         s.gridid
       FROM summits s
       WHERE NOT EXISTS (
-        SELECT 1 FROM spots sp
-        WHERE sp.wotaid = s.wotaid
-        AND sp.call = ?
-        AND YEAR(sp.datetime) = ?
+        SELECT 1 FROM activator_log al
+        WHERE al.wotaid = s.wotaid
+        AND al.activatedby = ?
+        AND al.year = ?
       )
       ORDER BY s.wotaid
     `;
@@ -164,20 +165,118 @@ async function getSummitsNotActivatedByCallsignThisYear(callsign, year) {
   }
 }
 
-async function getCallsignSamples(callsignPrefix) {
+async function getSummitsChasedByCallsign(callsign) {
   try {
     const query = `
-      SELECT DISTINCT call, COUNT(*) as count
-      FROM spots
-      WHERE call LIKE ?
-      GROUP BY call
-      ORDER BY count DESC
-      LIMIT 20
+      SELECT DISTINCT
+        s.wotaid,
+        s.sotaid,
+        s.book,
+        s.name,
+        s.height,
+        s.reference AS gridRef,
+        s.last_act_by,
+        s.last_act_date,
+        s.humpid,
+        s.gridid
+      FROM summits s
+      INNER JOIN chaser_log cl ON s.wotaid = cl.wotaid
+      WHERE cl.wkdby = ?
+      ORDER BY s.wotaid
     `;
-    const [rows] = await pool.query(query, [callsignPrefix + '%']);
+    const [rows] = await pool.query(query, [callsign.toUpperCase()]);
     return rows;
   } catch (error) {
-    console.error('Error fetching callsign samples:', error.message);
+    console.error('Error fetching summits chased by callsign:', error.message);
+    throw error;
+  }
+}
+
+async function getSummitsChasedByCallsignThisYear(callsign, year) {
+  try {
+    const query = `
+      SELECT DISTINCT
+        s.wotaid,
+        s.sotaid,
+        s.book,
+        s.name,
+        s.height,
+        s.reference AS gridRef,
+        s.last_act_by,
+        s.last_act_date,
+        s.humpid,
+        s.gridid
+      FROM summits s
+      INNER JOIN chaser_log cl ON s.wotaid = cl.wotaid
+      WHERE cl.wkdby = ?
+        AND cl.year = ?
+      ORDER BY s.wotaid
+    `;
+    const [rows] = await pool.query(query, [callsign.toUpperCase(), year]);
+    return rows;
+  } catch (error) {
+    console.error('Error fetching summits chased by callsign this year:', error.message);
+    throw error;
+  }
+}
+
+async function getSummitsNotChasedByCallsign(callsign) {
+  try {
+    const query = `
+      SELECT
+        s.wotaid,
+        s.sotaid,
+        s.book,
+        s.name,
+        s.height,
+        s.reference AS gridRef,
+        s.last_act_by,
+        s.last_act_date,
+        s.humpid,
+        s.gridid
+      FROM summits s
+      WHERE NOT EXISTS (
+        SELECT 1 FROM chaser_log cl
+        WHERE cl.wotaid = s.wotaid
+        AND cl.wkdby = ?
+      )
+      ORDER BY s.wotaid
+    `;
+    const [rows] = await pool.query(query, [callsign.toUpperCase()]);
+    return rows;
+  } catch (error) {
+    console.error('Error fetching summits not chased by callsign:', error.message);
+    throw error;
+  }
+}
+
+async function getSummitsNotChasedByCallsignThisYear(callsign, year) {
+  try {
+    const query = `
+      SELECT
+        s.wotaid,
+        s.sotaid,
+        s.book,
+        s.name,
+        s.height,
+        s.reference AS gridRef,
+        s.last_act_by,
+        s.last_act_date,
+        s.humpid,
+        s.gridid
+      FROM summits s
+      WHERE NOT EXISTS (
+        SELECT 1 FROM chaser_log cl
+        WHERE cl.wotaid = s.wotaid
+        AND cl.wkdby = ?
+        AND cl.year = ?
+      )
+      ORDER BY s.wotaid
+    `;
+    const [rows] = await pool.query(query, [callsign.toUpperCase(), year]);
+    return rows;
+  } catch (error) {
+    console.error('Error fetching summits not chased by callsign this year:', error.message);
     throw error;
   }
 }
@@ -190,5 +289,8 @@ module.exports = {
   getSummitsActivatedByCallsignThisYear,
   getSummitsNotActivatedByCallsign,
   getSummitsNotActivatedByCallsignThisYear,
-  getCallsignSamples
+  getSummitsChasedByCallsign,
+  getSummitsChasedByCallsignThisYear,
+  getSummitsNotChasedByCallsign,
+  getSummitsNotChasedByCallsignThisYear
 };

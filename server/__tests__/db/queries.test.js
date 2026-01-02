@@ -129,11 +129,11 @@ describe('Database Queries', () => {
 
       expect(result).toEqual(mockRows);
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('INNER JOIN spots sp ON s.wotaid = sp.wotaid'),
+        expect.stringContaining('INNER JOIN activator_log al ON s.wotaid = al.wotaid'),
         ['M0XYZ']
       );
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE sp.call = ?'),
+        expect.stringContaining('WHERE al.activatedby = ?'),
         ['M0XYZ']
       );
     });
@@ -174,15 +174,15 @@ describe('Database Queries', () => {
 
       expect(result).toEqual(mockRows);
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('INNER JOIN spots sp ON s.wotaid = sp.wotaid'),
+        expect.stringContaining('INNER JOIN activator_log al ON s.wotaid = al.wotaid'),
         ['M0XYZ', 2026]
       );
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE sp.call = ?'),
+        expect.stringContaining('WHERE al.activatedby = ?'),
         ['M0XYZ', 2026]
       );
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND YEAR(sp.datetime) = ?'),
+        expect.stringContaining('AND al.year = ?'),
         ['M0XYZ', 2026]
       );
     });
@@ -234,7 +234,7 @@ describe('Database Queries', () => {
         ['M0XYZ']
       );
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND sp.call = ?'),
+        expect.stringContaining('AND al.activatedby = ?'),
         ['M0XYZ']
       );
     });
@@ -286,11 +286,11 @@ describe('Database Queries', () => {
         ['M0XYZ', 2026]
       );
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND sp.call = ?'),
+        expect.stringContaining('AND al.activatedby = ?'),
         ['M0XYZ', 2026]
       );
       expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND YEAR(sp.datetime) = ?'),
+        expect.stringContaining('AND al.year = ?'),
         ['M0XYZ', 2026]
       );
     });

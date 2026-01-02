@@ -281,6 +281,8 @@ textLabelsButton.addEventListener('click', function () {
 const filterButton = document.getElementById('filter');
 const filterPanel = document.getElementById('filter-panel');
 const filterCloseButton = document.getElementById('filter-close');
+const filterIcon = document.getElementById('filter-icon');
+const clearFiltersButton = document.getElementById('clear-filters');
 
 filterButton.addEventListener('click', function (e) {
     e.preventDefault();
@@ -323,36 +325,46 @@ function showError(message) {
     }, 5000);
 }
 
-function fetchSummits(filter, callsign, year) {
+function updateFilterIcon(isActive) {
+    if (isActive) {
+        filterIcon.classList.add('active');
+        filterButton.classList.add('active');
+    } else {
+        filterIcon.classList.remove('active');
+        filterButton.classList.remove('active');
+    }
+}
+
+function fetchSummits(filterType, callsign, year) {
     let url = API_BASE_URL + '/summits';
     const params = [];
+    let filterApplied = false;
 
-    if (filter === 'activated') {
-        params.push('activated=true');
-    } else if (filter === 'unactivated') {
-        params.push('activated=false');
-    } else if (filter === 'my-year' || filter === 'my-ever' || filter === 'not-my-year' || filter === 'not-my-ever') {
+    const validFilterTypes = [
+        'activated-year', 'activated-ever', 'not-activated-year', 'not-activated-ever',
+        'chased-year', 'chased-ever', 'not-chased-year', 'not-chased-ever'
+    ];
+
+    if (validFilterTypes.includes(filterType)) {
         if (!callsign || callsign.trim() === '') {
-            showError('Please enter your callsign to filter by your activations.');
-            document.getElementById('filter-all').checked = true;
+            showError('Please enter your callsign to use filters.');
+            updateFilterIcon(false);
             return;
         }
+        params.push('filterType=' + encodeURIComponent(filterType));
         params.push('callsign=' + encodeURIComponent(callsign.trim().toUpperCase()));
 
-        if (filter === 'my-year') {
+        if (filterType.includes('-year')) {
             params.push('year=' + (year || new Date().getFullYear()));
-        } else if (filter === 'not-my-year') {
-            params.push('year=' + (year || new Date().getFullYear()));
-            params.push('notActivated=true');
-        } else if (filter === 'not-my-ever') {
-            params.push('notActivated=true');
         }
+        filterApplied = true;
     }
 
     if (params.length > 0) {
         url += '?' + params.join('&');
     }
 
+    updateFilterIcon(filterApplied);
     showLoading();
 
     $.ajax({
@@ -393,8 +405,11 @@ filterRadios.forEach(function (radio) {
 
 callsignInput.addEventListener('input', function () {
     const selectedFilter = document.querySelector('input[name="summit-filter"]:checked').value;
-    if (selectedFilter === 'my-year' || selectedFilter === 'my-ever' ||
-        selectedFilter === 'not-my-year' || selectedFilter === 'not-my-ever') {
+    const validFilterTypes = [
+        'activated-year', 'activated-ever', 'not-activated-year', 'not-activated-ever',
+        'chased-year', 'chased-ever', 'not-chased-year', 'not-chased-ever'
+    ];
+    if (validFilterTypes.includes(selectedFilter)) {
         const callsign = this.value;
         if (callsign.trim() !== '') {
             fetchSummits(selectedFilter, callsign);
@@ -402,4 +417,20 @@ callsignInput.addEventListener('input', function () {
     }
 });
 
-fetchSummits('all');
+clearFiltersButton.addEventListener('click', function () {
+    // Clear callsign input
+    callsignInput.value = '';
+
+    // Uncheck all radio buttons
+    filterRadios.forEach(function (radio) {
+        radio.checked = false;
+    });
+
+    // Load all summits (no filter)
+    fetchSummits();
+
+    console.log('Filters cleared');
+});
+
+// Load all summits initially (no filter applied)
+fetchSummits();

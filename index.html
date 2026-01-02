@@ -65,6 +65,14 @@
             font-size: 1.2rem !important;
         }
 
+        #filter-icon.active {
+            color: #527310 !important;
+        }
+
+        #filter.active {
+            background: rgba(82, 115, 16, 0.3) !important;
+        }
+
         div#filter-panel {
             background: rgba(82, 115, 16, 0.6);
             position: absolute;
@@ -159,6 +167,22 @@
             color: #999;
         }
 
+        div#filter-panel .clear-filters-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        div#filter-panel .clear-filters-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         div#loading-overlay {
             position: absolute;
             top: 0;
@@ -216,53 +240,64 @@
     <a id="text-labels" class="btn btn-default btn-transparent" href="#" title="Toggle summit labels"><i
             class="fa fa-font"></i></a>
     <a id="filter" class="btn btn-default btn-transparent" href="#" title="Filters"><i
-            class="fa fa-filter"></i></a>
+            class="fa fa-filter" id="filter-icon"></i></a>
 </div>
 <div id="filter-panel">
     <div class="panel-header">
         <h4>Filter Summits</h4>
         <button class="close-btn" id="filter-close">&times;</button>
     </div>
-    <div class="filter-options">
-        <div class="filter-option">
-            <input type="radio" id="filter-all" name="summit-filter" value="all" checked>
-            <label for="filter-all">All summits</label>
-        </div>
-        <div class="filter-option">
-            <input type="radio" id="filter-activated" name="summit-filter" value="activated">
-            <label for="filter-activated">Only activated</label>
-        </div>
-        <div class="filter-option">
-            <input type="radio" id="filter-unactivated" name="summit-filter" value="unactivated">
-            <label for="filter-unactivated">Only unactivated</label>
-        </div>
-    </div>
     <div class="callsign-section">
-        <h5>My Activations</h5>
+        <h5>Enter Your Callsign</h5>
         <input type="text"
                id="callsign-input"
                class="callsign-input"
                placeholder="Enter your callsign"
                maxlength="12">
+    </div>
+    <div class="callsign-section">
+        <h5>My Activations</h5>
         <div class="filter-options">
             <div class="filter-option">
-                <input type="radio" id="filter-my-year" name="summit-filter" value="my-year">
-                <label for="filter-my-year">Activated by me this year</label>
+                <input type="radio" id="filter-activated-year" name="summit-filter" value="activated-year">
+                <label for="filter-activated-year">Activated by me this year</label>
             </div>
             <div class="filter-option">
-                <input type="radio" id="filter-my-ever" name="summit-filter" value="my-ever">
-                <label for="filter-my-ever">Activated by me ever</label>
+                <input type="radio" id="filter-activated-ever" name="summit-filter" value="activated-ever">
+                <label for="filter-activated-ever">Activated by me ever</label>
             </div>
             <div class="filter-option">
-                <input type="radio" id="filter-not-my-year" name="summit-filter" value="not-my-year">
-                <label for="filter-not-my-year">Not activated by me this year</label>
+                <input type="radio" id="filter-not-activated-year" name="summit-filter" value="not-activated-year">
+                <label for="filter-not-activated-year">Not activated by me this year</label>
             </div>
             <div class="filter-option">
-                <input type="radio" id="filter-not-my-ever" name="summit-filter" value="not-my-ever">
-                <label for="filter-not-my-ever">Not activated by me ever</label>
+                <input type="radio" id="filter-not-activated-ever" name="summit-filter" value="not-activated-ever">
+                <label for="filter-not-activated-ever">Not activated by me ever</label>
             </div>
         </div>
     </div>
+    <div class="callsign-section">
+        <h5>My Chases</h5>
+        <div class="filter-options">
+            <div class="filter-option">
+                <input type="radio" id="filter-chased-year" name="summit-filter" value="chased-year">
+                <label for="filter-chased-year">Chased by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-chased-ever" name="summit-filter" value="chased-ever">
+                <label for="filter-chased-ever">Chased by me ever</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-chased-year" name="summit-filter" value="not-chased-year">
+                <label for="filter-not-chased-year">Not chased by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-chased-ever" name="summit-filter" value="not-chased-ever" checked>
+                <label for="filter-not-chased-ever">Not chased by me ever</label>
+            </div>
+        </div>
+    </div>
+    <button class="clear-filters-btn" id="clear-filters">Clear All Filters</button>
 </div>
 <script type="text/javascript" src="main.js"></script>
 </body>

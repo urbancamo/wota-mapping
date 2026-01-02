@@ -19,26 +19,26 @@ function loadStaticSummitsData() {
 
 function mergeSummitData(geoJsonData, dbRows, filterApplied) {
   const dbLookup = {};
-  const dbWotaIds = new Set();
+  const dbSummitNames = new Set();
 
   dbRows.forEach(row => {
-    const key = `${row.book}-${row.wotaid}`;
-    dbLookup[key] = {
+    const summitName = row.name;
+    dbLookup[summitName] = {
       last_act_by: row.last_act_by,
       last_act_date: row.last_act_date ? row.last_act_date.toISOString().split('T')[0] : null
     };
-    dbWotaIds.add(key);
+    dbSummitNames.add(summitName);
   });
 
   let features = geoJsonData.features;
 
   if (filterApplied) {
-    features = features.filter(f => dbWotaIds.has(f.properties.wotaId));
+    features = features.filter(f => dbSummitNames.has(f.properties.title));
   }
 
   features = features.map(feature => {
-    const wotaId = feature.properties.wotaId;
-    const activationData = dbLookup[wotaId] || { last_act_by: null, last_act_date: null };
+    const summitName = feature.properties.title;
+    const activationData = dbLookup[summitName] || { last_act_by: null, last_act_date: null };
 
     return {
       ...feature,
@@ -58,19 +58,7 @@ function mergeSummitData(geoJsonData, dbRows, filterApplied) {
 
 router.get('/', async (req, res) => {
   try {
-    const { activated, callsign, year, notActivated } = req.query;
-
-    if (activated !== undefined && activated !== 'true' && activated !== 'false') {
-      return res.status(400).json({
-        error: "Invalid 'activated' parameter. Must be 'true' or 'false'."
-      });
-    }
-
-    if (notActivated !== undefined && notActivated !== 'true' && notActivated !== 'false') {
-      return res.status(400).json({
-        error: "Invalid 'notActivated' parameter. Must be 'true' or 'false'."
-      });
-    }
+    const { callsign, year, filterType } = req.query;
 
     if (callsign && typeof callsign !== 'string') {
       return res.status(400).json({
@@ -84,35 +72,55 @@ router.get('/', async (req, res) => {
       });
     }
 
+    const validFilterTypes = [
+      'activated-year', 'activated-ever', 'not-activated-year', 'not-activated-ever',
+      'chased-year', 'chased-ever', 'not-chased-year', 'not-chased-ever'
+    ];
+
+    if (filterType && !validFilterTypes.includes(filterType)) {
+      return res.status(400).json({
+        error: "Invalid 'filterType' parameter."
+      });
+    }
+
     const staticData = loadStaticSummitsData();
 
     let dbRows;
-    let filterApplied = false;
+    let filterApplied = !!filterType;
 
-    if (callsign) {
-      filterApplied = true;
-      if (notActivated === 'true') {
-        if (year) {
-          dbRows = await queries.getSummitsNotActivatedByCallsignThisYear(callsign, parseInt(year));
-        } else {
-          dbRows = await queries.getSummitsNotActivatedByCallsign(callsign);
-        }
-      } else {
-        if (year) {
-          dbRows = await queries.getSummitsActivatedByCallsignThisYear(callsign, parseInt(year));
-        } else {
+    if (filterType && callsign) {
+      const yearValue = year ? parseInt(year) : new Date().getFullYear();
+
+      switch (filterType) {
+        case 'activated-year':
+          dbRows = await queries.getSummitsActivatedByCallsignThisYear(callsign, yearValue);
+          break;
+        case 'activated-ever':
           dbRows = await queries.getSummitsActivatedByCallsign(callsign);
-        }
+          break;
+        case 'not-activated-year':
+          dbRows = await queries.getSummitsNotActivatedByCallsignThisYear(callsign, yearValue);
+          break;
+        case 'not-activated-ever':
+          dbRows = await queries.getSummitsNotActivatedByCallsign(callsign);
+          break;
+        case 'chased-year':
+          dbRows = await queries.getSummitsChasedByCallsignThisYear(callsign, yearValue);
+          break;
+        case 'chased-ever':
+          dbRows = await queries.getSummitsChasedByCallsign(callsign);
+          break;
+        case 'not-chased-year':
+          dbRows = await queries.getSummitsNotChasedByCallsignThisYear(callsign, yearValue);
+          break;
+        case 'not-chased-ever':
+          dbRows = await queries.getSummitsNotChasedByCallsign(callsign);
+          break;
+        default:
+          dbRows = await queries.getAllSummits();
       }
     } else {
-      filterApplied = activated !== undefined;
-      if (activated === 'true') {
-        dbRows = await queries.getActivatedSummits();
-      } else if (activated === 'false') {
-        dbRows = await queries.getUnactivatedSummits();
-      } else {
-        dbRows = await queries.getAllSummits();
-      }
+      dbRows = await queries.getAllSummits();
     }
 
     const geoJson = mergeSummitData(staticData, dbRows, filterApplied);
