@@ -1,96 +1,305 @@
 <!DOCTYPE html>
-<html>
-  <head>
+<html lang="en">
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>Wainwrights On The Air</title>
     <link rel="stylesheet" href="https://openlayers.org/en/v5.3.0/css/ol.css" type="text/css">
-    <!-- The line below is only needed for old environments like Internet Explorer and Android 4.x -->
-    <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=requestAnimationFrame,Element.prototype.classList,URL"></script>
     <script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" type="text/css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css"
+          type="text/css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" type="text/css">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.3.0/build/ol.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.3/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.2.61/jspdf.min.js"></script>
     <style>
-      html, body {
-				width: 100%;
-				height: 100%;
-			}
-			
-			.scroll {
-					height: 100%;
-			}
-			
-			#map {
-					height: 100%;
-			}
-      div.popover-content {
-      	font-size: 75%;
-      	width:240px;
-      	height:90px;
-      }
-      div#header {
-				 background: rgba(82, 115, 16, 0.6);           
-				 position: absolute;
-				 width: 320px;
-				 height: 58px;
-				 top:5px;
-				 left: 50px;
-				 z-index: 100;
-				 -moz-border-radius: 15px;
-		     border-radius:5px;
-			}
-			
-			div#header a {
-				 background: rgba(82, 115, 16, 0) url(data/wotalogo.png) no-repeat 0 4px; 
-				 height:50px;
-				 display: block;
-				 text-indent: -999em;  
-				 text-decoration:none; 
-				 -moz-border-radius: 15px;
-		     border-radius:5px;
-   		}
-   		
-   		div#controls {
-   			position: absolute;
-   		    top: 0;
-					left: 400px;
-					display: block;
-					z-index: 100;
-					margin: 5px;
-			}
-			
-			.btn-transparent {
-				 background: rgba(255, 255, 255	, 0.6)!important;           
-			}
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
 
-			.ol-attribution ul {
-				line-height: 1rem !important;
-				font-size: 1.2rem !important;
-			}
-			.ol-attribution.ol-uncollapsible {
-			  height: 1.3em !important;
-			}
+        #map {
+            height: 100%;
+        }
+
+        div#header {
+            background: rgba(82, 115, 16, 0.6);
+            position: absolute;
+            width: 320px;
+            height: 58px;
+            top: 5px;
+            left: 50px;
+            z-index: 100;
+            border-radius: 5px;
+        }
+
+        div#header a {
+            background: rgba(82, 115, 16, 0) url(data/wotalogo.png) no-repeat 0 4px;
+            height: 50px;
+            display: block;
+            text-indent: -999em;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        div#controls {
+            position: absolute;
+            top: 0;
+            left: 400px;
+            display: block;
+            z-index: 100;
+            margin: 5px;
+        }
+
+        div.popover-content {
+            width: 273px;
+        }
+
+        .btn-transparent {
+            background: rgba(255, 255, 255, 0.6) !important;
+        }
+
+        .ol-attribution ul {
+            line-height: 1rem !important;
+            font-size: 1.2rem !important;
+        }
+
+        #filter-icon.active {
+            color: #527310 !important;
+        }
+
+        #filter.active {
+            background: rgba(82, 115, 16, 0.3) !important;
+        }
+
+        div#filter-panel {
+            background: rgba(82, 115, 16, 0.6);
+            position: absolute;
+            width: 280px;
+            top: 70px;
+            left: 400px;
+            z-index: 100;
+            border-radius: 5px;
+            padding: 15px;
+            display: none;
+            color: #fff;
+        }
+
+        div#filter-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        div#filter-panel .panel-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        div#filter-panel .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        div#filter-panel .close-btn:hover {
+            color: #ddd;
+        }
+
+        div#filter-panel .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        div#filter-panel .filter-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        div#filter-panel .filter-option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        div#filter-panel .filter-option label {
+            cursor: pointer;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        div#filter-panel .callsign-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        div#filter-panel .callsign-section h5 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        div#filter-panel .callsign-input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        div#filter-panel .callsign-input::placeholder {
+            text-transform: none;
+            color: #999;
+        }
+
+        div#filter-panel .clear-filters-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        div#filter-panel .clear-filters-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        div#loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        div#loading-overlay i {
+            color: #fff;
+        }
+
+        div#error-alert {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 101;
+            min-width: 300px;
+            max-width: 500px;
+            display: none;
+        }
     </style>
-  </head>
-  <body>
-   <div id="header">
-	   <a href="http://www.wota.org.uk/" title="Home Page, shortcut key=1">Wainwrights On The Air</a>
-   </div>
-   <div id="map"></div>
-   <div id="popup"></div>
-   <div id="controls">
-   	<a id="export-png" class="btn btn-default btn-transparent" href="#" title="Save as PNG"><i class="fa fa-file-image-o"></i></a>
-   	<a id="export-pdf" class="btn btn-default btn-transparent" href="#" title="Save as PDF"><i class="fa fa-file-pdf-o"></i></a>
-   	<a id="set-units" class="btn btn-default btn-transparent" href="#" title="Metric/Imperial Scale"><i class="fa fa-bars"></i></a>
-   	<!--<a id="gps-lock" class="btn btn-default btn-transparent" href="#" title="Lock on GPS"><i class="fa fa-location-arrow"></i></a>-->
-   	<a id="marker-size" class="btn btn-default btn-transparent" href="#" title="Toggle summit marker size"><i class="fa fa-circle"></i></a>
-   	<a id="text-labels" class="btn btn-default btn-transparent" href="#" title="Toggle summit labels"><i class="fa fa-font"></i></a>
-   </div>
-   <script type="text/javascript" src="main.js"></script>
-  </body>
+</head>
+<body>
+<div id="header">
+    <a href="http://www.wota.org.uk/" title="Home Page, shortcut key=1">Wainwrights On The Air</a>
+</div>
+<div id="map"></div>
+<div id="popup"></div>
+<div id="loading-overlay">
+    <i class="fa fa-spinner fa-spin fa-3x"></i>
+</div>
+<div id="error-alert" class="alert alert-danger alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    <strong>Error!</strong> <span id="error-message"></span>
+</div>
+<div id="controls">
+    <a id="export-png" class="btn btn-default btn-transparent" href="#" title="Save as PNG"><i
+            class="fa fa-file-image-o"></i></a>
+    <a id="export-pdf" class="btn btn-default btn-transparent" href="#" title="Save as PDF"><i
+            class="fa fa-file-pdf-o"></i></a>
+    <a id="set-units" class="btn btn-default btn-transparent" href="#" title="Metric/Imperial Scale"><i
+            class="fa fa-bars"></i></a>
+    <!--<a id="gps-lock" class="btn btn-default btn-transparent" href="#" title="Lock on GPS"><i class="fa fa-location-arrow"></i></a>-->
+    <a id="marker-size" class="btn btn-default btn-transparent" href="#" title="Toggle summit marker size"><i
+            class="fa fa-circle"></i></a>
+    <a id="text-labels" class="btn btn-default btn-transparent" href="#" title="Toggle summit labels"><i
+            class="fa fa-font"></i></a>
+    <a id="filter" class="btn btn-default btn-transparent" href="#" title="Filters"><i
+            class="fa fa-filter" id="filter-icon"></i></a>
+</div>
+<div id="filter-panel">
+    <div class="panel-header">
+        <h4>Filter Summits</h4>
+        <button class="close-btn" id="filter-close">&times;</button>
+    </div>
+    <div class="callsign-section">
+        <h5>Enter Your Callsign</h5>
+        <input type="text"
+               id="callsign-input"
+               class="callsign-input"
+               placeholder="Enter your callsign"
+               maxlength="12">
+    </div>
+    <div class="callsign-section">
+        <h5>My Activations</h5>
+        <div class="filter-options">
+            <div class="filter-option">
+                <input type="radio" id="filter-activated-year" name="summit-filter" value="activated-year">
+                <label for="filter-activated-year">Activated by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-activated-ever" name="summit-filter" value="activated-ever">
+                <label for="filter-activated-ever">Activated by me ever</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-activated-year" name="summit-filter" value="not-activated-year">
+                <label for="filter-not-activated-year">Not activated by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-activated-ever" name="summit-filter" value="not-activated-ever">
+                <label for="filter-not-activated-ever">Not activated by me ever</label>
+            </div>
+        </div>
+    </div>
+    <div class="callsign-section">
+        <h5>My Chases</h5>
+        <div class="filter-options">
+            <div class="filter-option">
+                <input type="radio" id="filter-chased-year" name="summit-filter" value="chased-year">
+                <label for="filter-chased-year">Chased by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-chased-ever" name="summit-filter" value="chased-ever">
+                <label for="filter-chased-ever">Chased by me ever</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-chased-year" name="summit-filter" value="not-chased-year">
+                <label for="filter-not-chased-year">Not chased by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-chased-ever" name="summit-filter" value="not-chased-ever" checked>
+                <label for="filter-not-chased-ever">Not chased by me ever</label>
+            </div>
+        </div>
+    </div>
+    <button class="clear-filters-btn" id="clear-filters">Clear All Filters</button>
+</div>
+<script type="text/javascript" src="main.js"></script>
+</body>
 </html>
 <!-- :indentSize=2:tabSize=2: -->
