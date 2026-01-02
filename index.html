@@ -52,6 +52,10 @@
             margin: 5px;
         }
 
+        div.popover-content {
+            width: 273px;
+        }
+
         .btn-transparent {
             background: rgba(255, 255, 255, 0.6) !important;
         }
@@ -59,6 +63,128 @@
         .ol-attribution ul {
             line-height: 1rem !important;
             font-size: 1.2rem !important;
+        }
+
+        div#filter-panel {
+            background: rgba(82, 115, 16, 0.6);
+            position: absolute;
+            width: 280px;
+            top: 70px;
+            left: 400px;
+            z-index: 100;
+            border-radius: 5px;
+            padding: 15px;
+            display: none;
+            color: #fff;
+        }
+
+        div#filter-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        div#filter-panel .panel-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        div#filter-panel .close-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        div#filter-panel .close-btn:hover {
+            color: #ddd;
+        }
+
+        div#filter-panel .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        div#filter-panel .filter-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        div#filter-panel .filter-option input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        div#filter-panel .filter-option label {
+            cursor: pointer;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        div#filter-panel .callsign-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        div#filter-panel .callsign-section h5 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        div#filter-panel .callsign-input {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        div#filter-panel .callsign-input::placeholder {
+            text-transform: none;
+            color: #999;
+        }
+
+        div#loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        div#loading-overlay i {
+            color: #fff;
+        }
+
+        div#error-alert {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 101;
+            min-width: 300px;
+            max-width: 500px;
+            display: none;
         }
     </style>
 </head>
@@ -68,6 +194,15 @@
 </div>
 <div id="map"></div>
 <div id="popup"></div>
+<div id="loading-overlay">
+    <i class="fa fa-spinner fa-spin fa-3x"></i>
+</div>
+<div id="error-alert" class="alert alert-danger alert-dismissible" role="alert">
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+    <strong>Error!</strong> <span id="error-message"></span>
+</div>
 <div id="controls">
     <a id="export-png" class="btn btn-default btn-transparent" href="#" title="Save as PNG"><i
             class="fa fa-file-image-o"></i></a>
@@ -82,6 +217,52 @@
             class="fa fa-font"></i></a>
     <a id="filter" class="btn btn-default btn-transparent" href="#" title="Filters"><i
             class="fa fa-filter"></i></a>
+</div>
+<div id="filter-panel">
+    <div class="panel-header">
+        <h4>Filter Summits</h4>
+        <button class="close-btn" id="filter-close">&times;</button>
+    </div>
+    <div class="filter-options">
+        <div class="filter-option">
+            <input type="radio" id="filter-all" name="summit-filter" value="all" checked>
+            <label for="filter-all">All summits</label>
+        </div>
+        <div class="filter-option">
+            <input type="radio" id="filter-activated" name="summit-filter" value="activated">
+            <label for="filter-activated">Only activated</label>
+        </div>
+        <div class="filter-option">
+            <input type="radio" id="filter-unactivated" name="summit-filter" value="unactivated">
+            <label for="filter-unactivated">Only unactivated</label>
+        </div>
+    </div>
+    <div class="callsign-section">
+        <h5>My Activations</h5>
+        <input type="text"
+               id="callsign-input"
+               class="callsign-input"
+               placeholder="Enter your callsign"
+               maxlength="12">
+        <div class="filter-options">
+            <div class="filter-option">
+                <input type="radio" id="filter-my-year" name="summit-filter" value="my-year">
+                <label for="filter-my-year">Activated by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-my-ever" name="summit-filter" value="my-ever">
+                <label for="filter-my-ever">Activated by me ever</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-my-year" name="summit-filter" value="not-my-year">
+                <label for="filter-not-my-year">Not activated by me this year</label>
+            </div>
+            <div class="filter-option">
+                <input type="radio" id="filter-not-my-ever" name="summit-filter" value="not-my-ever">
+                <label for="filter-not-my-ever">Not activated by me ever</label>
+            </div>
+        </div>
+    </div>
 </div>
 <script type="text/javascript" src="main.js"></script>
 </body>

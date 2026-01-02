@@ -58,7 +58,7 @@ function mergeSummitData(geoJsonData, dbRows, filterApplied) {
 
 router.get('/', async (req, res) => {
   try {
-    const { activated } = req.query;
+    const { activated, callsign, year, notActivated } = req.query;
 
     if (activated !== undefined && activated !== 'true' && activated !== 'false') {
       return res.status(400).json({
@@ -66,17 +66,53 @@ router.get('/', async (req, res) => {
       });
     }
 
+    if (notActivated !== undefined && notActivated !== 'true' && notActivated !== 'false') {
+      return res.status(400).json({
+        error: "Invalid 'notActivated' parameter. Must be 'true' or 'false'."
+      });
+    }
+
+    if (callsign && typeof callsign !== 'string') {
+      return res.status(400).json({
+        error: "Invalid 'callsign' parameter. Must be a string."
+      });
+    }
+
+    if (year && (isNaN(year) || year.length !== 4)) {
+      return res.status(400).json({
+        error: "Invalid 'year' parameter. Must be a 4-digit year."
+      });
+    }
+
     const staticData = loadStaticSummitsData();
 
     let dbRows;
-    const filterApplied = activated !== undefined;
+    let filterApplied = false;
 
-    if (activated === 'true') {
-      dbRows = await queries.getActivatedSummits();
-    } else if (activated === 'false') {
-      dbRows = await queries.getUnactivatedSummits();
+    if (callsign) {
+      filterApplied = true;
+      if (notActivated === 'true') {
+        if (year) {
+          dbRows = await queries.getSummitsNotActivatedByCallsignThisYear(callsign, parseInt(year));
+        } else {
+          dbRows = await queries.getSummitsNotActivatedByCallsign(callsign);
+        }
+      } else {
+        if (year) {
+          dbRows = await queries.getSummitsActivatedByCallsignThisYear(callsign, parseInt(year));
+        } else {
+          dbRows = await queries.getSummitsActivatedByCallsign(callsign);
+        }
+      }
     } else {
-      dbRows = await queries.getAllSummits();
+      filterApplied = activated !== undefined;
+      if (activated === 'true') {
+        dbRows = await queries.getActivatedSummits();
+      } else if (activated === 'false') {
+        dbRows = await queries.getUnactivatedSummits();
+      } else {
+        dbRows = await queries.getAllSummits();
+      }
     }
 
     const geoJson = mergeSummitData(staticData, dbRows, filterApplied);

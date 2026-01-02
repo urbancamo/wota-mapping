@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const summitsRouter = require('./routes/summits');
+const pool = require('./db/connection');
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -10,7 +11,14 @@ app.use(express.json());
 
 if (process.env.NODE_ENV === 'development') {
   app.use(cors({
-    origin: ['http://localhost:8080', 'http://127.0.0.1:8080', 'file://'],
+    origin: function (origin, callback) {
+      const allowedOrigins = ['http://localhost:8080', 'http://127.0.0.1:8080'];
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     methods: ['GET'],
     credentials: false
   }));
@@ -24,11 +32,27 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({
+app.get('/api/health', async (req, res) => {
+  const health = {
     status: 'ok',
-    timestamp: new Date().toISOString()
-  });
+    timestamp: new Date().toISOString(),
+    database: {
+      connected: false,
+      error: null
+    }
+  };
+
+  try {
+    await pool.query('SELECT 1');
+    health.database.connected = true;
+  } catch (error) {
+    health.status = 'degraded';
+    health.database.connected = false;
+    health.database.error = error.message;
+  }
+
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
 app.use('/api/summits', summitsRouter);

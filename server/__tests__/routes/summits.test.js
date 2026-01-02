@@ -152,4 +152,65 @@ describe('GET /api/summits', () => {
       expect(Array.isArray(feature.geometry.coordinates)).toBe(true);
     });
   });
+
+  test('should filter summits by callsign', async () => {
+    queries.getSummitsActivatedByCallsign.mockResolvedValue([mockDbRows[0]]);
+
+    const response = await request(app).get('/api/summits?callsign=M0XYZ');
+
+    expect(response.status).toBe(200);
+    expect(queries.getSummitsActivatedByCallsign).toHaveBeenCalledWith('M0XYZ');
+    expect(response.body.features).toHaveLength(1);
+  });
+
+  test('should filter summits by callsign and year', async () => {
+    queries.getSummitsActivatedByCallsignThisYear.mockResolvedValue([mockDbRows[0]]);
+
+    const response = await request(app).get('/api/summits?callsign=M0XYZ&year=2026');
+
+    expect(response.status).toBe(200);
+    expect(queries.getSummitsActivatedByCallsignThisYear).toHaveBeenCalledWith('M0XYZ', 2026);
+    expect(response.body.features).toHaveLength(1);
+  });
+
+  test('should return 400 for invalid year parameter', async () => {
+    const response = await request(app).get('/api/summits?callsign=M0XYZ&year=20');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("Invalid 'year' parameter. Must be a 4-digit year.");
+  });
+
+  test('should return 400 for non-numeric year parameter', async () => {
+    const response = await request(app).get('/api/summits?callsign=M0XYZ&year=abcd');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("Invalid 'year' parameter. Must be a 4-digit year.");
+  });
+
+  test('should filter summits not activated by callsign', async () => {
+    queries.getSummitsNotActivatedByCallsign.mockResolvedValue([mockDbRows[1]]);
+
+    const response = await request(app).get('/api/summits?callsign=M0XYZ&notActivated=true');
+
+    expect(response.status).toBe(200);
+    expect(queries.getSummitsNotActivatedByCallsign).toHaveBeenCalledWith('M0XYZ');
+    expect(response.body.features).toHaveLength(1);
+  });
+
+  test('should filter summits not activated by callsign this year', async () => {
+    queries.getSummitsNotActivatedByCallsignThisYear.mockResolvedValue([mockDbRows[1]]);
+
+    const response = await request(app).get('/api/summits?callsign=M0XYZ&year=2026&notActivated=true');
+
+    expect(response.status).toBe(200);
+    expect(queries.getSummitsNotActivatedByCallsignThisYear).toHaveBeenCalledWith('M0XYZ', 2026);
+    expect(response.body.features).toHaveLength(1);
+  });
+
+  test('should return 400 for invalid notActivated parameter', async () => {
+    const response = await request(app).get('/api/summits?callsign=M0XYZ&notActivated=invalid');
+
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe("Invalid 'notActivated' parameter. Must be 'true' or 'false'.");
+  });
 });

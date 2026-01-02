@@ -55,10 +55,7 @@ const featureStyle = function (feature) {
 };
 
 const summits = new ol.layer.Vector({
-    source: new ol.source.Vector({
-        url: 'data/summits.json',
-        format: new ol.format.GeoJSON()
-    }),
+    source: new ol.source.Vector(),
     style: featureStyle
 });
 
@@ -130,6 +127,16 @@ map.on('click', function (evt) {
             "<tr><td><a href='http://wota.org.uk/MM_" + wotaPageRef + "' target='_blank' rel='noopener noreferrer'>" + feature.get('wotaId') + ": " + feature.get('title') + "</a></td></tr>" +
             "<tr><td>Height: " + feature.get('height') + ", Locator: " + feature.get('qthLocator') + "</td></tr>" +
             "<tr><td>Grid: " + feature.get('gridRef') + "</td></tr>";
+
+        let activation = "";
+        const lastActBy = feature.get('last_act_by');
+        const lastActDate = feature.get('last_act_date');
+        if (lastActBy && lastActDate) {
+            activation = "<tr><td><em>Last activated by " + lastActBy + " on " + lastActDate + "</em></td></tr>";
+        } else {
+            activation = "<tr><td><em>Never activated</em></td></tr>";
+        }
+
         let sota = "";
         if (feature.get('sotaId') !== "") {
             sota = "SOTA ID: <a href='https://summits.sota.org.uk/summit/" + feature.get('sotaId') + "' target='_blank' rel='noopener noreferrer'>" + feature.get('sotaId') + "</a>";
@@ -150,7 +157,7 @@ map.on('click', function (evt) {
             refs = refs + hump + "</td></tr>";
         }
         const tableFoot = "</tbody></table>";
-        const content = tableHead + body + refs + tableFoot;
+        const content = tableHead + body + activation + refs + tableFoot;
         if (popupActive) {
             document.getElementsByClassName("popover-content")[0].innerHTML = content;
         } else {
@@ -269,4 +276,130 @@ textLabelsButton.addEventListener('click', function () {
         textLabels = true;
     }
     map.getView().animate({zoom: map.getView().getZoom() + zoom});
-})
+});
+
+const filterButton = document.getElementById('filter');
+const filterPanel = document.getElementById('filter-panel');
+const filterCloseButton = document.getElementById('filter-close');
+
+filterButton.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (filterPanel.style.display === 'none' || filterPanel.style.display === '') {
+        filterPanel.style.display = 'block';
+    } else {
+        filterPanel.style.display = 'none';
+    }
+});
+
+filterCloseButton.addEventListener('click', function () {
+    filterPanel.style.display = 'none';
+});
+
+const filterRadios = document.getElementsByName('summit-filter');
+const loadingOverlay = document.getElementById('loading-overlay');
+const errorAlert = document.getElementById('error-alert');
+const errorMessage = document.getElementById('error-message');
+
+const API_BASE_URL = window.location.hostname === 'localhost' ||
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.protocol === 'file:' ||
+                     window.location.hostname === ''
+    ? 'http://localhost:3006/api'
+    : '/mapping/api';
+
+function showLoading() {
+    loadingOverlay.style.display = 'flex';
+}
+
+function hideLoading() {
+    loadingOverlay.style.display = 'none';
+}
+
+function showError(message) {
+    errorMessage.textContent = message;
+    errorAlert.style.display = 'block';
+    setTimeout(function () {
+        errorAlert.style.display = 'none';
+    }, 5000);
+}
+
+function fetchSummits(filter, callsign, year) {
+    let url = API_BASE_URL + '/summits';
+    const params = [];
+
+    if (filter === 'activated') {
+        params.push('activated=true');
+    } else if (filter === 'unactivated') {
+        params.push('activated=false');
+    } else if (filter === 'my-year' || filter === 'my-ever' || filter === 'not-my-year' || filter === 'not-my-ever') {
+        if (!callsign || callsign.trim() === '') {
+            showError('Please enter your callsign to filter by your activations.');
+            document.getElementById('filter-all').checked = true;
+            return;
+        }
+        params.push('callsign=' + encodeURIComponent(callsign.trim().toUpperCase()));
+
+        if (filter === 'my-year') {
+            params.push('year=' + (year || new Date().getFullYear()));
+        } else if (filter === 'not-my-year') {
+            params.push('year=' + (year || new Date().getFullYear()));
+            params.push('notActivated=true');
+        } else if (filter === 'not-my-ever') {
+            params.push('notActivated=true');
+        }
+    }
+
+    if (params.length > 0) {
+        url += '?' + params.join('&');
+    }
+
+    showLoading();
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            hideLoading();
+
+            const format = new ol.format.GeoJSON();
+            const features = format.readFeatures(data, {
+                featureProjection: 'EPSG:3857'
+            });
+
+            summits.getSource().clear();
+            summits.getSource().addFeatures(features);
+
+            console.log('Loaded ' + features.length + ' summits');
+        },
+        error: function (xhr, status, error) {
+            hideLoading();
+            console.error('Failed to load summits:', error);
+            showError('Failed to load summit data. Please try again later.');
+        }
+    });
+}
+
+const callsignInput = document.getElementById('callsign-input');
+
+filterRadios.forEach(function (radio) {
+    radio.addEventListener('change', function () {
+        const filterValue = this.value;
+        const callsign = callsignInput.value;
+        console.log('Filter changed to:', filterValue);
+        fetchSummits(filterValue, callsign);
+    });
+});
+
+callsignInput.addEventListener('input', function () {
+    const selectedFilter = document.querySelector('input[name="summit-filter"]:checked').value;
+    if (selectedFilter === 'my-year' || selectedFilter === 'my-ever' ||
+        selectedFilter === 'not-my-year' || selectedFilter === 'not-my-ever') {
+        const callsign = this.value;
+        if (callsign.trim() !== '') {
+            fetchSummits(selectedFilter, callsign);
+        }
+    }
+});
+
+fetchSummits('all');
