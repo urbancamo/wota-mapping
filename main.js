@@ -1,5 +1,5 @@
 const isMobile = window.innerWidth <= 768;
-let scaleFactorForDot = isMobile ? 0.6 : 0.4;
+let scaleFactorForDot = isMobile ? 0.25 : 0.4;
 const screenRes = Math.sqrt((window.screen.availHeight * window.screen.availHeight) + (window.screen.availWidth * window.screen.availWidth));
 let dotScale = window.devicePixelRatio * scaleFactorForDot;
 const scaleFactorForHitTolerance = isMobile ? 1 / 50 : 1 / 100;
@@ -264,10 +264,10 @@ markerSizeButton.addEventListener('click', function () {
     let zoom = 1;
     if (largeMarkers) {
         largeMarkers = false;
-        scaleFactorForDot = isMobile ? 0.6 : 0.4;
+        scaleFactorForDot = isMobile ? 0.25 : 0.4;
         zoom = -1;
     } else {
-        scaleFactorForDot = isMobile ? 0.9 : 0.75;
+        scaleFactorForDot = isMobile ? 0.45 : 0.75;
         largeMarkers = true;
     }
     dotScale = parseFloat(window.devicePixelRatio * scaleFactorForDot);
