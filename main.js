@@ -7,17 +7,23 @@ let textLabels = false;
 let largeMarkers = false;
 
 const featureStyle = function (feature) {
+    const matchesFilter = feature.get('matchesFilter');
+    const markerColor = matchesFilter === false ? '#cccccc' : feature.get("marker-color");
+
     const imageStyle = new ol.style.Style({
         image: new ol.style.Icon(({
-            color: feature.get("marker-color"),
+            color: markerColor,
             crossOrigin: 'anonymous',
             src: 'data/dot.png',
-            scale: dotScale
+            scale: dotScale,
+            opacity: matchesFilter === false ? 0.5 : 1.0
         }))
     });
 
     let labelFillColor = '#fff';
-    if (feature.get('bookId') === 'NW' || feature.get('bookId') === 'OF' || feature.get('bookId') === 'S') {
+    if (matchesFilter === false) {
+        labelFillColor = '#999';
+    } else if (feature.get('bookId') === 'NW' || feature.get('bookId') === 'OF' || feature.get('bookId') === 'S') {
         labelFillColor = '#444';
     }
     let yOffset = -12 * window.devicePixelRatio;
@@ -26,10 +32,11 @@ const featureStyle = function (feature) {
     }
     const labelStyle = new ol.style.Style({
         image: new ol.style.Icon(({
-            color: feature.get("marker-color"),
+            color: markerColor,
             crossOrigin: 'anonymous',
             src: 'data/dot.png',
-            scale: dotScale
+            scale: dotScale,
+            opacity: matchesFilter === false ? 0.5 : 1.0
         })),
         text: new ol.style.Text({
             font: "" + window.devicePixelRatio * 14 + "px Calibri,sans-serif",
@@ -38,7 +45,7 @@ const featureStyle = function (feature) {
                 color: labelFillColor
             }),
             stroke: new ol.style.Stroke({
-                color: feature.get("marker-color"),
+                color: markerColor,
                 width: 2
             }),
             offsetX: 0,
@@ -96,7 +103,7 @@ let popupActive = false;
 const popup = new ol.Overlay({
     element: popupElement,
     positioning: 'bottom-center',
-    stopEvent: false,
+    stopEvent: true,
     offset: [0, 0]
 });
 map.addOverlay(popup);
@@ -283,6 +290,9 @@ const filterPanel = document.getElementById('filter-panel');
 const filterCloseButton = document.getElementById('filter-close');
 const filterIcon = document.getElementById('filter-icon');
 const clearFiltersButton = document.getElementById('clear-filters');
+const filterCount = document.getElementById('filter-count');
+const filterCountMatched = document.getElementById('filter-count-matched');
+const filterCountTotal = document.getElementById('filter-count-total');
 
 filterButton.addEventListener('click', function (e) {
     e.preventDefault();
@@ -382,7 +392,16 @@ function fetchSummits(filterType, callsign, year) {
             summits.getSource().clear();
             summits.getSource().addFeatures(features);
 
-            console.log('Loaded ' + features.length + ' summits');
+            const matchingCount = features.filter(f => f.get('matchesFilter') !== false).length;
+            if (filterApplied) {
+                console.log('Loaded ' + features.length + ' summits (' + matchingCount + ' matching filter)');
+                filterCountMatched.textContent = matchingCount;
+                filterCountTotal.textContent = features.length;
+                filterCount.classList.add('active');
+            } else {
+                console.log('Loaded ' + features.length + ' summits');
+                filterCount.classList.remove('active');
+            }
         },
         error: function (xhr, status, error) {
             hideLoading();

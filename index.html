@@ -183,6 +183,20 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
+        div#filter-panel .filter-count {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+            font-size: 13px;
+            text-align: center;
+            display: none;
+        }
+
+        div#filter-panel .filter-count.active {
+            display: block;
+        }
+
         div#loading-overlay {
             position: absolute;
             top: 0;
@@ -296,6 +310,9 @@
                 <label for="filter-not-chased-ever">Not chased by me ever</label>
             </div>
         </div>
+    </div>
+    <div class="filter-count" id="filter-count">
+        <strong id="filter-count-matched">0</strong> of <strong id="filter-count-total">0</strong> summits match
     </div>
     <button class="clear-filters-btn" id="clear-filters">Clear All Filters</button>
 </div>

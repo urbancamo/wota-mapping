@@ -30,22 +30,18 @@ function mergeSummitData(geoJsonData, dbRows, filterApplied) {
     dbSummitNames.add(summitName);
   });
 
-  let features = geoJsonData.features;
-
-  if (filterApplied) {
-    features = features.filter(f => dbSummitNames.has(f.properties.title));
-  }
-
-  features = features.map(feature => {
+  const features = geoJsonData.features.map(feature => {
     const summitName = feature.properties.title;
     const activationData = dbLookup[summitName] || { last_act_by: null, last_act_date: null };
+    const matchesFilter = filterApplied ? dbSummitNames.has(summitName) : true;
 
     return {
       ...feature,
       properties: {
         ...feature.properties,
         last_act_by: activationData.last_act_by,
-        last_act_date: activationData.last_act_date
+        last_act_date: activationData.last_act_date,
+        matchesFilter: matchesFilter
       }
     };
   });
