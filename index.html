@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Wainwrights On The Air</title>
     <link rel="stylesheet" href="https://openlayers.org/en/v5.3.0/css/ol.css" type="text/css">
     <script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
@@ -125,17 +126,22 @@
             display: flex;
             align-items: center;
             cursor: pointer;
+            padding: 5px 0;
         }
 
         div#filter-panel .filter-option input[type="radio"] {
             margin-right: 10px;
             cursor: pointer;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
         }
 
         div#filter-panel .filter-option label {
             cursor: pointer;
             margin: 0;
             font-size: 14px;
+            flex: 1;
         }
 
         div#filter-panel .callsign-section {
@@ -224,6 +230,169 @@
             max-width: 500px;
             display: none;
         }
+
+        /* Mobile responsive styles */
+        @media screen and (max-width: 768px) {
+            div#header {
+                width: 200px;
+                height: 42px;
+                top: 5px;
+                left: 5px;
+            }
+
+            div#header a {
+                background-size: 180px auto;
+                height: 38px;
+            }
+
+            div#controls {
+                left: auto;
+                right: 5px;
+                top: 5px;
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            div#controls .btn {
+                width: 44px;
+                height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                padding: 0;
+            }
+
+            div#filter-panel {
+                left: 5px;
+                right: 5px;
+                width: auto;
+                top: 55px;
+                max-height: calc(100vh - 70px);
+                overflow-y: auto;
+            }
+
+            div#filter-panel .panel-header h4 {
+                font-size: 18px;
+            }
+
+            div#filter-panel .filter-option {
+                padding: 8px 0;
+                min-height: 44px;
+            }
+
+            div#filter-panel .filter-option input[type="radio"] {
+                width: 22px;
+                height: 22px;
+            }
+
+            div#filter-panel .filter-option label {
+                font-size: 16px;
+            }
+
+            div#filter-panel .callsign-section h5 {
+                font-size: 16px;
+            }
+
+            div#filter-panel .callsign-input {
+                font-size: 16px;
+                padding: 10px;
+            }
+
+            div#filter-panel .clear-filters-btn {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            div#filter-panel .filter-count {
+                font-size: 15px;
+                padding: 12px;
+            }
+
+            div.popover-content {
+                width: auto;
+                max-width: calc(100vw - 40px);
+                font-size: 16px;
+            }
+
+            .popover {
+                max-width: calc(100vw - 20px) !important;
+            }
+
+            .popover-content table {
+                font-size: 14px;
+            }
+
+            .popover-content table td {
+                padding: 4px 0;
+            }
+
+            div#error-alert {
+                top: 60px;
+                left: 10px;
+                right: 10px;
+                transform: none;
+                min-width: auto;
+                max-width: none;
+            }
+
+            .ol-attribution {
+                font-size: 10px !important;
+            }
+
+            .ol-attribution ul {
+                font-size: 10px !important;
+            }
+
+            /* Larger touch targets for map controls */
+            .ol-zoom button,
+            .ol-full-screen button {
+                font-size: 1.5em;
+                width: 2.5em;
+                height: 2.5em;
+            }
+
+            .ol-scale-line {
+                bottom: 8px;
+                left: 8px;
+            }
+        }
+
+        /* Very small screens (phones in portrait) */
+        @media screen and (max-width: 480px) {
+            div#header {
+                width: 160px;
+                height: 38px;
+            }
+
+            div#header a {
+                background-size: 150px auto;
+                height: 34px;
+            }
+
+            div#controls .btn {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            div#filter-panel {
+                padding: 12px;
+            }
+
+            div#filter-panel .panel-header h4 {
+                font-size: 16px;
+            }
+
+            div#filter-panel .filter-option label {
+                font-size: 14px;
+            }
+
+            div#filter-panel .callsign-section h5 {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -306,7 +475,7 @@
                 <label for="filter-not-chased-year">Not chased by me this year</label>
             </div>
             <div class="filter-option">
-                <input type="radio" id="filter-not-chased-ever" name="summit-filter" value="not-chased-ever" checked>
+                <input type="radio" id="filter-not-chased-ever" name="summit-filter" value="not-chased-ever">
                 <label for="filter-not-chased-ever">Not chased by me ever</label>
             </div>
         </div>

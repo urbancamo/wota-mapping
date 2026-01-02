@@ -1,7 +1,8 @@
-let scaleFactorForDot = 0.4;
+const isMobile = window.innerWidth <= 768;
+let scaleFactorForDot = isMobile ? 0.6 : 0.4;
 const screenRes = Math.sqrt((window.screen.availHeight * window.screen.availHeight) + (window.screen.availWidth * window.screen.availWidth));
 let dotScale = window.devicePixelRatio * scaleFactorForDot;
-const scaleFactorForHitTolerance = 1 / 100;
+const scaleFactorForHitTolerance = isMobile ? 1 / 50 : 1 / 100;
 const hitTol = screenRes * scaleFactorForHitTolerance;
 let textLabels = false;
 let largeMarkers = false;
@@ -263,10 +264,10 @@ markerSizeButton.addEventListener('click', function () {
     let zoom = 1;
     if (largeMarkers) {
         largeMarkers = false;
-        scaleFactorForDot = 0.4;
+        scaleFactorForDot = isMobile ? 0.6 : 0.4;
         zoom = -1;
     } else {
-        scaleFactorForDot = 0.75;
+        scaleFactorForDot = isMobile ? 0.9 : 0.75;
         largeMarkers = true;
     }
     dotScale = parseFloat(window.devicePixelRatio * scaleFactorForDot);
@@ -423,7 +424,11 @@ filterRadios.forEach(function (radio) {
 });
 
 callsignInput.addEventListener('input', function () {
-    const selectedFilter = document.querySelector('input[name="summit-filter"]:checked').value;
+    const selectedFilterRadio = document.querySelector('input[name="summit-filter"]:checked');
+    if (!selectedFilterRadio) {
+        return;
+    }
+    const selectedFilter = selectedFilterRadio.value;
     const validFilterTypes = [
         'activated-year', 'activated-ever', 'not-activated-year', 'not-activated-ever',
         'chased-year', 'chased-ever', 'not-chased-year', 'not-chased-ever'
