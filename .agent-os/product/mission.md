@@ -72,7 +72,7 @@ Activators planning multi-summit trips need to visualize distances, elevations, 
 
 ### Community-Focused Enhancement
 
-Unlike the official WOTA site, we provide an enhanced mapping experience hosted at m5tea.uk/mapping specifically designed for advanced users who need filtering and visualization capabilities similar to the popular sotl.as platform used by SOTA participants.
+Unlike the official WOTA site, we provide an enhanced mapping experience hosted at m5tea.uk/wota-mapping specifically designed for advanced users who need filtering and visualization capabilities similar to the popular sotl.as platform used by SOTA participants.
 
 ### Cross-Program Integration
 

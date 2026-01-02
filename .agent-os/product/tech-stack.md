@@ -92,8 +92,8 @@
 - **Platform:** Self-hosted server (m5tea.uk)
 - **Server:** nginx
 - **Configuration:** Reverse proxy
-- **Frontend Path:** /mapping/
-- **Backend Path:** /mapping/api/ (proxied to port 3003)
+- **Frontend Path:** /wota-mapping/
+- **Backend Path:** /wota-mapping/api/ (proxied to port 3006)
 
 ### Database Hosting
 - **Provider:** LayerIP Hosting
@@ -118,13 +118,13 @@
   4. nginx config reload if needed
 
 ### Environments
-- **Production:** https://m5tea.uk/mapping/
-- **Development:** localhost:8080 (frontend), localhost:3003 (backend)
+- **Production:** https://m5tea.uk/wota-mapping/
+- **Development:** localhost:8080 (frontend), localhost:3006 (backend)
 
 ### Reverse Proxy Configuration
 - **Server:** nginx
-- **Frontend:** Serve static files from /mapping/
-- **Backend:** Proxy /mapping/api/ to http://localhost:3003/api/
+- **Frontend:** Serve static files from /wota-mapping/
+- **Backend:** Proxy /wota-mapping/api/ to http://localhost:3006/api/
 - **SSL:** HTTPS via Let's Encrypt
 
 ## Database Schema

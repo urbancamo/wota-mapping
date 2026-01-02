@@ -307,7 +307,7 @@ const API_BASE_URL = window.location.hostname === 'localhost' ||
                      window.location.protocol === 'file:' ||
                      window.location.hostname === ''
     ? 'http://localhost:3006/api'
-    : '/mapping/api';
+    : '/wota-mapping/api';
 
 function showLoading() {
     loadingOverlay.style.display = 'flex';

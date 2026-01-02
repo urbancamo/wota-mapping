@@ -68,15 +68,15 @@ When asked to work on this codebase:
 
 ### Local Development
 - Frontend: Open `index.html` in browser (file://) or use local server
-- Backend: `node server.js` (when implemented) on port 3003
+- Backend: `./start-server.sh` (runs on port 3006)
 
 ### Production Deployment
-- **URL:** https://m5tea.uk/mapping/
+- **URL:** https://m5tea.uk/wota-mapping/
 - **Server:** nginx reverse proxy
-- **Frontend:** Static files served from `/mapping/`
-- **Backend:** Proxied to `http://localhost:3003/api/`
+- **Frontend:** Static files served from `/wota-mapping/`
+- **Backend:** Proxied to `http://localhost:3006/api/`
 
 ### nginx Configuration Notes
 - Frontend serves: HTML, CSS, JS, images, data files
-- Backend API path: `/mapping/api/*` → `http://localhost:3003/api/*`
+- Backend API path: `/wota-mapping/api/*` → `http://localhost:3006/api/*`
 - SSL via Let's Encrypt
