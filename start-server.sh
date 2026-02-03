@@ -2,6 +2,9 @@
 
 # Start the WOTA Mapping API server
 
+# Ensure repo-based git hooks are active
+git config core.hooksPath .githooks
+
 echo "Starting WOTA Mapping API server..."
 
 cd server
