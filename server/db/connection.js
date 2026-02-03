@@ -40,12 +40,13 @@ pool.on('error', (err) => {
 // are retried immediately with no delay.
 async function queryWithRetry(sql, params) {
   const RETRY_DELAY_MS = 1000;
+  const QUERY_TIMEOUT_MS = 5000;
   let attempt = 0;
 
   while (true) {
     attempt++;
     try {
-      return await pool.query(sql, params);
+      return await pool.query({ sql, timeout: QUERY_TIMEOUT_MS }, params);
     } catch (error) {
       const isTimeout = error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET';
       console.error(
