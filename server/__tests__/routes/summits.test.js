@@ -153,24 +153,39 @@ describe('GET /api/summits', () => {
     });
   });
 
-  test('should filter summits by callsign', async () => {
-    queries.getSummitsActivatedByCallsign.mockResolvedValue([mockDbRows[0]]);
+  test('should prefetch all summits with callsign flags when callsign provided without filterType', async () => {
+    const mockFlagRows = [
+      { ...mockDbRows[0], activated_ever: 1, activated_year: 1, chased_ever: 0, chased_year: 0 },
+      { ...mockDbRows[1], activated_ever: 0, activated_year: 0, chased_ever: 1, chased_year: 0 }
+    ];
+    queries.getAllSummitsWithCallsignFlags.mockResolvedValue(mockFlagRows);
 
     const response = await request(app).get('/api/summits?callsign=M0XYZ');
 
     expect(response.status).toBe(200);
-    expect(queries.getSummitsActivatedByCallsign).toHaveBeenCalledWith('M0XYZ');
-    expect(response.body.features).toHaveLength(1);
+    expect(queries.getAllSummitsWithCallsignFlags).toHaveBeenCalled();
+    expect(response.body.features).toHaveLength(2);
+    expect(response.body.features[0].properties.activated_ever).toBe(true);
+    expect(response.body.features[0].properties.chased_ever).toBe(false);
+    expect(response.body.features[1].properties.activated_ever).toBe(false);
+    expect(response.body.features[1].properties.chased_ever).toBe(true);
+    // All summits have matchesFilter true (no filter active yet)
+    expect(response.body.features[0].properties.matchesFilter).toBe(true);
+    expect(response.body.features[1].properties.matchesFilter).toBe(true);
   });
 
-  test('should filter summits by callsign and year', async () => {
-    queries.getSummitsActivatedByCallsignThisYear.mockResolvedValue([mockDbRows[0]]);
+  test('should prefetch with specific year when callsign and year provided', async () => {
+    const mockFlagRows = [
+      { ...mockDbRows[0], activated_ever: 1, activated_year: 1, chased_ever: 0, chased_year: 0 },
+      { ...mockDbRows[1], activated_ever: 0, activated_year: 0, chased_ever: 0, chased_year: 0 }
+    ];
+    queries.getAllSummitsWithCallsignFlags.mockResolvedValue(mockFlagRows);
 
     const response = await request(app).get('/api/summits?callsign=M0XYZ&year=2026');
 
     expect(response.status).toBe(200);
-    expect(queries.getSummitsActivatedByCallsignThisYear).toHaveBeenCalledWith('M0XYZ', 2026);
-    expect(response.body.features).toHaveLength(1);
+    expect(queries.getAllSummitsWithCallsignFlags).toHaveBeenCalledWith('M0XYZ', 2026);
+    expect(response.body.features).toHaveLength(2);
   });
 
   test('should return 400 for invalid year parameter', async () => {

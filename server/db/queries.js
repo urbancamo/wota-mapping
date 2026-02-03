@@ -281,6 +281,39 @@ async function getSummitsNotChasedByCallsignThisYear(callsign, year) {
   }
 }
 
+// Single query returning all summits with boolean flags for all filter
+// combinations for a given callsign/year. Used on initial load so the
+// client can switch filters without further API calls.
+async function getAllSummitsWithCallsignFlags(callsign, year) {
+  try {
+    const query = `
+      SELECT
+        s.wotaid,
+        s.sotaid,
+        s.book,
+        s.name,
+        s.height,
+        s.reference AS gridRef,
+        s.last_act_by,
+        s.last_act_date,
+        s.humpid,
+        s.gridid,
+        EXISTS(SELECT 1 FROM activator_log al WHERE al.wotaid = s.wotaid AND al.activatedby = ?) AS activated_ever,
+        EXISTS(SELECT 1 FROM activator_log al WHERE al.wotaid = s.wotaid AND al.activatedby = ? AND al.year = ?) AS activated_year,
+        EXISTS(SELECT 1 FROM chaser_log cl WHERE cl.wotaid = s.wotaid AND cl.wkdby = ?) AS chased_ever,
+        EXISTS(SELECT 1 FROM chaser_log cl WHERE cl.wotaid = s.wotaid AND cl.wkdby = ? AND cl.year = ?) AS chased_year
+      FROM summits s
+      ORDER BY s.wotaid
+    `;
+    const cs = callsign.toUpperCase();
+    const [rows] = await pool.query(query, [cs, cs, year, cs, cs, year]);
+    return rows;
+  } catch (error) {
+    console.error('Error fetching summits with callsign flags:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   getAllSummits,
   getActivatedSummits,
@@ -292,5 +325,6 @@ module.exports = {
   getSummitsChasedByCallsign,
   getSummitsChasedByCallsignThisYear,
   getSummitsNotChasedByCallsign,
-  getSummitsNotChasedByCallsignThisYear
+  getSummitsNotChasedByCallsignThisYear,
+  getAllSummitsWithCallsignFlags
 };

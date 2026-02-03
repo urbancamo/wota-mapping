@@ -52,6 +52,50 @@ function mergeSummitData(geoJsonData, dbRows, filterApplied) {
   };
 }
 
+// Merge that includes the 4 boolean callsign flags for client-side filtering
+function mergeSummitDataWithFlags(geoJsonData, dbRows) {
+  const dbLookup = {};
+
+  dbRows.forEach(row => {
+    dbLookup[row.name] = {
+      last_act_by: row.last_act_by,
+      last_act_date: row.last_act_date ? row.last_act_date.toISOString().split('T')[0] : null,
+      activated_ever: !!row.activated_ever,
+      activated_year: !!row.activated_year,
+      chased_ever: !!row.chased_ever,
+      chased_year: !!row.chased_year
+    };
+  });
+
+  const features = geoJsonData.features.map(feature => {
+    const summitName = feature.properties.title;
+    const data = dbLookup[summitName] || {
+      last_act_by: null, last_act_date: null,
+      activated_ever: false, activated_year: false,
+      chased_ever: false, chased_year: false
+    };
+
+    return {
+      ...feature,
+      properties: {
+        ...feature.properties,
+        last_act_by: data.last_act_by,
+        last_act_date: data.last_act_date,
+        activated_ever: data.activated_ever,
+        activated_year: data.activated_year,
+        chased_ever: data.chased_ever,
+        chased_year: data.chased_year,
+        matchesFilter: true
+      }
+    };
+  });
+
+  return {
+    type: 'FeatureCollection',
+    features
+  };
+}
+
 router.get('/', async (req, res) => {
   try {
     const { callsign, year, filterType } = req.query;
@@ -80,6 +124,16 @@ router.get('/', async (req, res) => {
     }
 
     const staticData = loadStaticSummitsData();
+
+    // When callsign is provided without filterType, return all summits
+    // with boolean flags so the client can filter locally without
+    // further API calls.
+    if (callsign && !filterType) {
+      const yearValue = year ? parseInt(year) : new Date().getFullYear();
+      const dbRows = await queries.getAllSummitsWithCallsignFlags(callsign, yearValue);
+      const geoJson = mergeSummitDataWithFlags(staticData, dbRows);
+      return res.json(geoJson);
+    }
 
     let dbRows;
     let filterApplied = !!filterType;

@@ -346,36 +346,90 @@ function updateFilterIcon(isActive) {
     }
 }
 
-function fetchSummits(filterType, callsign, year) {
-    let url = API_BASE_URL + '/summits';
-    const params = [];
-    let filterApplied = false;
+const validFilterTypes = [
+    'activated-year', 'activated-ever', 'not-activated-year', 'not-activated-ever',
+    'chased-year', 'chased-ever', 'not-chased-year', 'not-chased-ever'
+];
 
-    const validFilterTypes = [
-        'activated-year', 'activated-ever', 'not-activated-year', 'not-activated-ever',
-        'chased-year', 'chased-ever', 'not-chased-year', 'not-chased-ever'
-    ];
+// Maps each filterType to the GeoJSON property name that holds the boolean flag.
+// "not-" variants use the same flag but invert it client-side.
+const filterFlagMap = {
+    'activated-ever':      'activated_ever',
+    'activated-year':      'activated_year',
+    'not-activated-ever':  'activated_ever',
+    'not-activated-year':  'activated_year',
+    'chased-ever':         'chased_ever',
+    'chased-year':         'chased_year',
+    'not-chased-ever':     'chased_ever',
+    'not-chased-year':     'chased_year'
+};
 
-    if (validFilterTypes.includes(filterType)) {
-        if (!callsign || callsign.trim() === '') {
-            showError('Please enter your callsign to use filters.');
-            updateFilterIcon(false);
-            return;
-        }
-        params.push('filterType=' + encodeURIComponent(filterType));
-        params.push('callsign=' + encodeURIComponent(callsign.trim().toUpperCase()));
+// Cached GeoJSON response from the prefetch endpoint. Contains all summits
+// with the 4 boolean flags for the cached callsign, allowing filter changes
+// without further API calls.
+let cachedData = null;
+let cachedCallsign = null;
 
-        if (filterType.includes('-year')) {
-            params.push('year=' + (year || new Date().getFullYear()));
-        }
-        filterApplied = true;
-    }
+function displayFeatures(data, filterType) {
+    const filterApplied = !!filterType;
 
-    if (params.length > 0) {
-        url += '?' + params.join('&');
-    }
+    const format = new ol.format.GeoJSON();
+    const features = format.readFeatures(data, {
+        featureProjection: 'EPSG:3857'
+    });
+
+    summits.getSource().clear();
+    summits.getSource().addFeatures(features);
 
     updateFilterIcon(filterApplied);
+
+    const matchingCount = features.filter(f => f.get('matchesFilter') !== false).length;
+    if (filterApplied) {
+        console.log('Loaded ' + features.length + ' summits (' + matchingCount + ' matching filter)');
+        filterCountMatched.textContent = matchingCount;
+        filterCountTotal.textContent = features.length;
+        filterCount.classList.add('active');
+    } else {
+        console.log('Loaded ' + features.length + ' summits');
+        filterCount.classList.remove('active');
+    }
+}
+
+// Apply a filter to cached data client-side by computing matchesFilter
+// from the boolean flags, without hitting the API.
+function applyFilterFromCache(filterType) {
+    if (!cachedData) return;
+
+    const data = JSON.parse(JSON.stringify(cachedData));
+    const flagProp = filterFlagMap[filterType];
+    const isNegated = filterType && filterType.startsWith('not-');
+
+    data.features.forEach(function (f) {
+        if (filterType && flagProp) {
+            var flagValue = !!f.properties[flagProp];
+            f.properties.matchesFilter = isNegated ? !flagValue : flagValue;
+        } else {
+            f.properties.matchesFilter = true;
+        }
+    });
+
+    displayFeatures(data, filterType);
+}
+
+// Fetch all summits with callsign flags (prefetch), cache the response,
+// then optionally apply a filter from the cache.
+function fetchSummitsWithCallsign(callsign, filterType) {
+    const cs = callsign.trim().toUpperCase();
+
+    // If we already have cached data for this callsign, use it directly
+    if (cachedData && cachedCallsign === cs) {
+        applyFilterFromCache(filterType);
+        return;
+    }
+
+    var url = API_BASE_URL + '/summits?callsign=' + encodeURIComponent(cs) +
+              '&year=' + new Date().getFullYear();
+
     showLoading();
 
     $.ajax({
@@ -384,25 +438,32 @@ function fetchSummits(filterType, callsign, year) {
         dataType: 'json',
         success: function (data) {
             hideLoading();
+            cachedData = data;
+            cachedCallsign = cs;
+            applyFilterFromCache(filterType);
+        },
+        error: function (xhr, status, error) {
+            hideLoading();
+            console.error('Failed to load summits:', error);
+            showError('Failed to load summit data. Please try again later.');
+        }
+    });
+}
 
-            const format = new ol.format.GeoJSON();
-            const features = format.readFeatures(data, {
-                featureProjection: 'EPSG:3857'
-            });
+// Fetch all summits without any callsign context (basic load)
+function fetchSummitsBasic() {
+    var url = API_BASE_URL + '/summits';
 
-            summits.getSource().clear();
-            summits.getSource().addFeatures(features);
+    updateFilterIcon(false);
+    showLoading();
 
-            const matchingCount = features.filter(f => f.get('matchesFilter') !== false).length;
-            if (filterApplied) {
-                console.log('Loaded ' + features.length + ' summits (' + matchingCount + ' matching filter)');
-                filterCountMatched.textContent = matchingCount;
-                filterCountTotal.textContent = features.length;
-                filterCount.classList.add('active');
-            } else {
-                console.log('Loaded ' + features.length + ' summits');
-                filterCount.classList.remove('active');
-            }
+    $.ajax({
+        url: url,
+        method: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            hideLoading();
+            displayFeatures(data, null);
         },
         error: function (xhr, status, error) {
             hideLoading();
@@ -414,47 +475,81 @@ function fetchSummits(filterType, callsign, year) {
 
 const callsignInput = document.getElementById('callsign-input');
 
+// Restore callsign from localStorage
+const storedCallsign = localStorage.getItem('wota-callsign');
+if (storedCallsign) {
+    callsignInput.value = storedCallsign;
+}
+
 filterRadios.forEach(function (radio) {
     radio.addEventListener('change', function () {
         const filterValue = this.value;
         const callsign = callsignInput.value;
         console.log('Filter changed to:', filterValue);
-        fetchSummits(filterValue, callsign);
+
+        if (validFilterTypes.includes(filterValue)) {
+            if (!callsign || callsign.trim() === '') {
+                showError('Please enter your callsign to use filters.');
+                updateFilterIcon(false);
+                return;
+            }
+            fetchSummitsWithCallsign(callsign, filterValue);
+        } else {
+            fetchSummitsBasic();
+        }
     });
 });
 
 callsignInput.addEventListener('input', function () {
+    const callsign = this.value;
+
+    // Persist callsign to localStorage
+    if (callsign.trim() !== '') {
+        localStorage.setItem('wota-callsign', callsign.trim().toUpperCase());
+    } else {
+        localStorage.removeItem('wota-callsign');
+    }
+
+    // Invalidate cache when callsign changes
+    if (cachedCallsign !== callsign.trim().toUpperCase()) {
+        cachedData = null;
+        cachedCallsign = null;
+    }
+
     const selectedFilterRadio = document.querySelector('input[name="summit-filter"]:checked');
     if (!selectedFilterRadio) {
         return;
     }
     const selectedFilter = selectedFilterRadio.value;
-    const validFilterTypes = [
-        'activated-year', 'activated-ever', 'not-activated-year', 'not-activated-ever',
-        'chased-year', 'chased-ever', 'not-chased-year', 'not-chased-ever'
-    ];
     if (validFilterTypes.includes(selectedFilter)) {
-        const callsign = this.value;
         if (callsign.trim() !== '') {
-            fetchSummits(selectedFilter, callsign);
+            fetchSummitsWithCallsign(callsign, selectedFilter);
         }
     }
 });
 
 clearFiltersButton.addEventListener('click', function () {
-    // Clear callsign input
+    // Clear callsign input and stored value
     callsignInput.value = '';
+    localStorage.removeItem('wota-callsign');
 
     // Uncheck all radio buttons
     filterRadios.forEach(function (radio) {
         radio.checked = false;
     });
 
-    // Load all summits (no filter)
-    fetchSummits();
+    // Invalidate cache and load all summits
+    cachedData = null;
+    cachedCallsign = null;
+    fetchSummitsBasic();
 
     console.log('Filters cleared');
 });
 
-// Load all summits initially (no filter applied)
-fetchSummits();
+// Initial load: if a callsign is stored, prefetch all filter data in one
+// query so subsequent filter changes are instant. Otherwise basic load.
+if (storedCallsign) {
+    fetchSummitsWithCallsign(storedCallsign, null);
+} else {
+    fetchSummitsBasic();
+}

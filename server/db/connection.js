@@ -35,11 +35,11 @@ pool.on('error', (err) => {
 });
 
 // Transparent retry wrapper for queries over unreliable VPN link.
-// Uses exponential backoff with jitter, retrying indefinitely since
-// the database is assumed to be up but the connection may be slow.
+// Retries indefinitely with a fixed 1s interval since the database
+// is assumed to be up but the connection may be slow. Timeout errors
+// are retried immediately with no delay.
 async function queryWithRetry(sql, params) {
-  const MAX_DELAY_MS = 15000;
-  let delay = 1000;
+  const RETRY_DELAY_MS = 1000;
   let attempt = 0;
 
   while (true) {
@@ -47,13 +47,13 @@ async function queryWithRetry(sql, params) {
     try {
       return await pool.query(sql, params);
     } catch (error) {
-      const jitter = Math.random() * 500;
-      const waitTime = Math.min(delay + jitter, MAX_DELAY_MS);
+      const isTimeout = error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET';
       console.error(
-        `Database query failed (attempt ${attempt}): ${error.message}. Retrying in ${Math.round(waitTime)}ms...`
+        `Database query failed (attempt ${attempt}): ${error.message}.${isTimeout ? ' Retrying immediately...' : ` Retrying in ${RETRY_DELAY_MS}ms...`}`
       );
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-      delay = Math.min(delay * 2, MAX_DELAY_MS);
+      if (!isTimeout) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      }
     }
   }
 }
