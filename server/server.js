@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const summitsRouter = require('./routes/summits');
-const pool = require('./db/connection');
+const db = require('./db/connection');
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -43,7 +43,7 @@ app.get('/api/health', async (req, res) => {
   };
 
   try {
-    await pool.query('SELECT 1');
+    await db.pool.query('SELECT 1');
     health.database.connected = true;
   } catch (error) {
     health.status = 'degraded';

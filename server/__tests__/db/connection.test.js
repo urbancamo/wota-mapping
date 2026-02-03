@@ -53,10 +53,20 @@ describe('Database Connection', () => {
       expect.objectContaining({
         connectionLimit: 10,
         queueLimit: 0,
-        waitForConnections: true
+        waitForConnections: true,
+        connectTimeout: 30000
       })
     );
 
     createPoolSpy.mockRestore();
+  });
+
+  test('should export query function and raw pool', () => {
+    process.env.WOTA_DATABASE_URL = 'mysql://user:pass@host/db';
+
+    const connection = require('../../db/connection');
+
+    expect(typeof connection.query).toBe('function');
+    expect(connection.pool).toBeDefined();
   });
 });

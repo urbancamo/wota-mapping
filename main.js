@@ -141,7 +141,7 @@ map.on('click', function (evt) {
         const lastActDate = feature.get('last_act_date');
         if (lastActBy && lastActDate) {
             activation = "<tr><td><em>Last activated by " + lastActBy + " on " + lastActDate + "</em></td></tr>";
-        } else {
+        } else if (feature.get('matchesFilter') !== false) {
             activation = "<tr><td><em>Never activated</em></td></tr>";
         }
 
