@@ -259,6 +259,20 @@ unitsButton.addEventListener('click', function () {
     scaleLineControl.setUnits(units);
 });
 
+const gpsButton = document.getElementById('gps-lock');
+gpsButton.addEventListener('click', function () {
+    if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(function (position) {
+        const coords = ol.proj.fromLonLat([position.coords.longitude, position.coords.latitude]);
+        map.getView().animate({center: coords, zoom: 13, duration: 500});
+    }, function () {
+        alert('Unable to retrieve your location.');
+    }, {timeout: 10000});
+});
+
 const markerSizeButton = document.getElementById('marker-size');
 markerSizeButton.addEventListener('click', function () {
     let zoom = 1;
